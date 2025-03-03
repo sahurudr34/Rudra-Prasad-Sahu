@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Tools</title>
+  <style>
+    /* Modern and Responsive Design */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1e3c72, #2a5298); /* Gradient Background */
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+    input[type="file"], input[type="text"], input[type="password"] {
+      display: none;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .upload-label, .payment-button, .founder-login-button {
+      display: inline-block;
+      padding: 15px 30px;
+      background: #0073e6;
+      color: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      margin: 10px;
+      transition: background 0.3s ease;
+    }
+    .upload-label:hover, .payment-button:hover, .founder-login-button:hover {
+      background: #005bb5;
+    }
+    .slider-container {
+      margin: 20px 0;
+    }
+    .slider-container label {
+      font-size: 1.1rem;
+    }
+    .slider {
+      width: 100%;
+      margin: 10px 0;
+    }
+    .action-button {
+      padding: 15px 30px;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      margin: 10px;
+      transition: background 0.3s ease;
+    }
+    .action-button:hover {
+      background: #218838;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 1.1rem;
+    }
+    .download-button {
+      padding: 15px 30px;
+      background: #ff6f61;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      margin: 10px;
+      transition: background 0.3s ease;
+    }
+    .download-button:hover {
+      background: #e65a50;
+    }
+    .qr-code {
+      margin: 20px 0;
+    }
+    .qr-code img {
+      width: 200px;
+      height: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Tools</h1>
+    
+    <!-- Payment Button -->
+    <button class="payment-button" onclick="handlePayment()">Pay to Use</button>
+
+    <!-- QR Code (Hidden by Default) -->
+    <div class="qr-code" style="display: none;">
+      <img src="your-qr-code.png" alt="QR Code">
+      <p>Scan the QR code to complete payment.</p>
+    </div>
+
+    <!-- Payment Successful Screen (Hidden by Default) -->
+    <div id="payment-successful" style="display: none;">
+      <h2>Payment Successful!</h2>
+      <p>A secret code has been sent to your email.</p>
+    </div>
+
+    <!-- File Upload (Hidden by Default) -->
+    <label for="file-input" class="upload-label" style="display: none;">Choose Image</label>
+    <input type="file" id="file-input" accept="image/*">
+
+    <!-- Compression Slider (Hidden by Default) -->
+    <div class="slider-container" style="display: none;">
+      <label for="compression-slider">Compression Level: <span id="compression-value">50%</span></label>
+      <input type="range" id="compression-slider" class="slider" min="1" max="100" value="50">
+    </div>
+
+    <!-- Action Buttons (Hidden by Default) -->
+    <button class="action-button" onclick="compressImage()" style="display: none;">Compress Image</button>
+    <button class="action-button" onclick="convertImageToPDF()" style="display: none;">Convert to PDF</button>
+
+    <!-- Download Button (Hidden by Default) -->
+    <button id="download-button" class="download-button" style="display: none;" onclick="downloadFile()">Download File</button>
+
+    <!-- Status Message -->
+    <p id="status"></p>
+
+    <!-- Founder Login Button -->
+    <button class="founder-login-button" onclick="handleFounderLogin()">Founder Login</button>
+
+    <!-- Founder Dashboard (Hidden by Default) -->
+    <div id="founder-dashboard" style="display: none;">
+      <h2>Founder Dashboard</h2>
+      <div id="user-list"></div>
+    </div>
+  </div>
+
+  <!-- Add Required Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression/dist/browser-image-compression.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js"></script>
+  <script>
+    let processedFile = null; // To store the processed file (compressed image or PDF)
+    let isPaid = false; // Track if the user has paid
+    let users = []; // Store user data
+
+    // Update Compression Value
+    const compressionSlider = document.getElementById('compression-slider');
+    const compressionValue = document.getElementById('compression-value');
+
+    compressionSlider.addEventListener('input', () => {
+      compressionValue.textContent = `${compressionSlider.value}%`;
+    });
+
+    // Handle Payment
+    function handlePayment() {
+      // Show QR code
+      document.querySelector('.qr-code').style.display = 'block';
+      document.getElementById('status').textContent = 'Please scan the QR code to complete payment.';
+
+      // Simulate payment completion
+      setTimeout(() => {
+        document.querySelector('.qr-code').style.display = 'none';
+        document.getElementById('payment-successful').style.display = 'block';
+        document.getElementById('status').textContent = 'Payment successful!';
+
+        // Generate secret code
+        const secretCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        // Send secret code to user's email
+        sendEmail(secretCode);
+
+        // Enable tools
+        isPaid = true;
+        document.querySelector('.upload-label').style.display = 'inline-block';
+        document.querySelector('.slider-container').style.display = 'block';
+        document.querySelectorAll('.action-button').forEach(button => button.style.display = 'inline-block');
+      }, 5000); // Simulate 5-second payment process
+    }
+
+    // Send Email with Secret Code
+    function sendEmail(secretCode) {
+      const userEmail = prompt('Enter your email address to receive the secret code:');
+      if (userEmail) {
+        EmailJS.send('your_service_id', 'your_template_id', {
+          to_email: userEmail,
+          secret_code: secretCode,
+        }).then(
+          response => {
+            console.log('Email sent successfully!', response);
+          },
+          error => {
+            console.error('Failed to send email:', error);
+          }
+        );
+      }
+    }
+
+    // Handle Founder Login
+    function handleFounderLogin() {
+      const secretPhrase = prompt('Enter the secret phrase to access founder login:');
+      if (secretPhrase === 'Mr.sahu#') {
+        const userId = prompt('Enter Founder User ID:');
+        const password = prompt('Enter Founder Password:');
+        if (userId === '14071980' && password === 'Rudra761032#@') {
+          alert('Founder login successful!');
+          document.getElementById('founder-dashboard').style.display = 'block';
+          displayUserList();
+        } else {
+          alert('Invalid User ID or Password.');
+        }
+      } else {
+        alert('Invalid secret phrase.');
+      }
+    }
+
+    // Display User List
+    function displayUserList() {
+      const userList = document.getElementById('user-list');
+      userList.innerHTML = '<h3>Users Joined:</h3>';
+      users.forEach(user => {
+        userList.innerHTML += `
+          <div>
+            <p>Email: ${user.email}</p>
+            <p>Image: <img src="${user.image}" alt="User Image" width="100"></p>
+          </div>
+        `;
+      });
+    }
+
+    // Compress Image
+    async function compressImage() {
+      if (!isPaid) {
+        alert('Please pay to use this feature.');
+        return;
+      }
+
+      const fileInput = document.getElementById('file-input');
+      const status = document.getElementById('status');
+      const downloadButton = document.getElementById('download-button');
+
+      if (!fileInput.files[0]) {
+        status.textContent = 'Please select an image.';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const compressionLevel = compressionSlider.value / 100;
+
+      status.textContent = 'Compressing image...';
+
+      try {
+        const options = {
+          maxSizeMB: compressionLevel,
+          maxWidthOrHeight: 1024,
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
+        processedFile = compressedFile;
+        status.textContent = 'Image compressed successfully!';
+        downloadButton.style.display = 'block';
+      } catch (error) {
+        status.textContent = 'Error compressing image: ' + error.message;
+      }
+    }
+
+    // Convert Image to PDF
+    async function convertImageToPDF() {
+      if (!isPaid) {
+        alert('Please pay to use this feature.');
+        return;
+      }
+
+      const fileInput = document.getElementById('file-input');
+      const status = document.getElementById('status');
+      const downloadButton = document.getElementById('download-button');
+
+      if (!fileInput.files[0]) {
+        status.textContent = 'Please select an image.';
+        return;
+      }
+
+      const file = fileInput.files[0];
+
+      status.textContent = 'Converting to PDF...';
+
+      try {
+        const image = await file.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        const imageEmbed = await pdfDoc.embedJpg(image); // Use embedPng for PNG images
+        const page = pdfDoc.addPage();
+        page.drawImage(imageEmbed, {
+          x: 50,
+          y: 50,
+          width: imageEmbed.width / 2,
+          height: imageEmbed.height / 2,
+        });
+        const pdfBytes = await pdfDoc.save();
+        processedFile = new Blob([pdfBytes], { type: 'application/pdf' });
+        status.textContent = 'PDF conversion complete! Download your PDF.';
+        downloadButton.style.display = 'block';
+      } catch (error) {
+        status.textContent = 'Error converting to PDF: ' + error.message;
+      }
+    }
+
+    // Download File
+    function downloadFile() {
+      if (!processedFile) {
+        alert('No file to download.');
+        return;
+      }
+
+      const url = URL.createObjectURL(processedFile);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = processedFile.type === 'application/pdf' ? 'converted.pdf' : 'compressed.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
